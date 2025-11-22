@@ -1,116 +1,121 @@
 # Iteration 2 - User & Profile Service (MS1)
 
-**项目状态**: ✅ **完全完成**  
-**完成时间**: 2025-11-22  
-**测试结果**: 38/38 通过 (100%) ✅
+**Project Status**: ✅ **Complete**  
+**Completion Date**: 2025-11-22  
+**Test Results**: 38/38 Pass (100%) ✅
 
 ---
 
-## 📋 目录
+## 📋 Table of Contents
 
-1. [📊 Iteration 2 需求](#-iteration-2-需求)
-2. [✨ 实现的功能](#-实现的功能)
-3. [🚀 快速开始](#-快速开始)
-4. [📁 项目结构](#-项目结构)
-5. [🧪 测试验证](#-测试验证)
-6. [📝 使用示例](#-使用示例)
-7. [🛠 部署](#-部署)
-
----
-
-## 📊 Iteration 2 需求
-
-### ✅ 完成的 7 项需求
-
-| # | 需求 | 实现 | 验证 | 状态 |
-|---|------|------|------|------|
-| 1 | ETag (RFC 7232) | ✅ | 6/6 测试通过 | ✅ |
-| 2 | 查询参数 | ✅ | 4/4 测试通过 | ✅ |
-| 3 | 分页 (Pagination) | ✅ | 4/4 测试通过 | ✅ |
-| 4 | 201 Created 响应 | ✅ | 4/4 测试通过 | ✅ |
-| 5 | HATEOAS 链接 | ✅ | 2/2 测试通过 | ✅ |
-| 6 | MySQL 持久化 | ✅ | Docker 运行 | ✅ |
-| 7 | 部署配置 | ✅ | Docker + Systemd | ✅ |
+1. [📊 Iteration 2 Requirements](#-iteration-2-requirements)
+2. [✨ Implementation Details](#-implementation-details)
+3. [🚀 Getting Started](#-getting-started)
+4. [📁 Project Structure](#-project-structure)
+5. [🧪 Testing & Verification](#-testing--verification)
+6. [📝 API Examples](#-api-examples)
+7. [🛠 Deployment Guide](#-deployment-guide)
 
 ---
 
-## ✨ 实现的功能
+## 📊 Iteration 2 Requirements
 
-### 1. ETag 支持 (RFC 7232)
-实现了完整的 HTTP 缓存验证机制：
+### ✅ 7 Requirements Completed
 
-- **ETag 生成**: 每个资源都有唯一的 ETag 值
-- **304 Not Modified**: 客户端发送 `If-None-Match` 头时，如果 ETag 匹配则返回 304
-- **412 Precondition Failed**: 客户端发送 `If-Match` 头进行条件更新时，如果不匹配则返回 412
-- **304 Wildcard**: 支持 `If-None-Match: *` 通配符
+| # | Requirement | Status | Verification | Result |
+|---|-------------|--------|--------------|--------|
+| 1 | ETag Support (RFC 7232) | ✅ | 6/6 tests pass | ✅ |
+| 2 | Query Parameters | ✅ | 4/4 tests pass | ✅ |
+| 3 | Pagination | ✅ | 4/4 tests pass | ✅ |
+| 4 | 201 Created Response | ✅ | 4/4 tests pass | ✅ |
+| 5 | HATEOAS Links | ✅ | 2/2 tests pass | ✅ |
+| 6 | MySQL Database | ✅ | Docker running | ✅ |
+| 7 | Deployment Config | ✅ | Docker + Systemd | ✅ |
 
-**示例**:
+---
+
+## ✨ Implementation Details
+
+### 1. ETag Support (RFC 7232)
+
+Implemented full HTTP conditional request support for caching:
+
+- **ETag Generation**: Each resource gets a unique ETag value
+- **304 Not Modified**: When client sends `If-None-Match` header with matching ETag, returns 304
+- **412 Precondition Failed**: When client sends `If-Match` header with mismatched ETag during updates, returns 412
+- **Wildcard Support**: Handles `If-None-Match: *` for cache validation
+
+**Example Usage**:
 ```bash
-# 第一次请求获取 ETag
+# First request to get ETag
 curl -i http://localhost:8000/users/123
-# 返回: ETag: "abc123def456"
+# Returns: ETag: "abc123def456"
 
-# 后续请求使用 ETag
+# Subsequent requests using ETag
 curl -H "If-None-Match: abc123def456" http://localhost:8000/users/123
-# 返回: 304 Not Modified (无响应体)
+# Returns: 304 Not Modified (no body)
 ```
 
-### 2. 查询参数支持
-支持 6 种查询参数，可组合使用：
+### 2. Query Parameters
 
-| 参数 | 类型 | 说明 | 示例 |
-|-----|------|------|------|
-| `email` | string | 按邮箱过滤 | `?email=user@example.com` |
-| `membership_tier` | enum | 按会员等级 | `?membership_tier=PRO` |
-| `username` | string | 按用户名 | `?username=john_doe` |
-| `profile_id` | UUID | 按档案 ID | `?profile_id=123e...` |
-| `created_after` | ISO8601 | 时间范围 | `?created_after=2025-01-01` |
-| `created_before` | ISO8601 | 时间范围 | `?created_before=2025-12-31` |
+Supporting 6 different query parameters that can be combined:
 
-**示例**:
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `email` | string | Filter by email | `?email=user@example.com` |
+| `membership_tier` | enum | Filter by tier | `?membership_tier=PRO` |
+| `username` | string | Filter by username | `?username=john_doe` |
+| `profile_id` | UUID | Filter by profile | `?profile_id=123e...` |
+| `created_after` | ISO8601 | Date range start | `?created_after=2025-01-01` |
+| `created_before` | ISO8601 | Date range end | `?created_before=2025-12-31` |
+
+**Examples**:
 ```bash
-# 单个参数
+# Single parameter
 curl "http://localhost:8000/users?membership_tier=PRO"
 
-# 组合参数
+# Combined parameters
 curl "http://localhost:8000/users?membership_tier=PRO&created_after=2025-01-01"
 ```
 
-### 3. 分页 (Pagination)
-基于游标的分页实现，高效处理大数据集：
+### 3. Pagination
 
-- **pageSize**: 每页记录数，默认 10，最大 100
-- **pageToken**: 不透明的分页游标
-- **响应包含**: 总数、当前页大小、下一页链接
+Implemented cursor-based pagination for efficient large dataset handling:
 
-**示例**:
+- **pageSize**: Records per page (default: 10, max: 100)
+- **pageToken**: Opaque pagination cursor
+- **Response includes**: Total count, current page size, next page link
+
+**Examples**:
 ```bash
-# 第一页
+# First page
 curl "http://localhost:8000/users?pageSize=5"
-# 返回: {"items": [...], "pageSize": 5, "total": 20, "_links": {"next": "...?pageToken=xyz"}}
+# Returns: {"items": [...], "pageSize": 5, "total": 20, "_links": {"next": "...?pageToken=xyz"}}
 
-# 下一页
+# Next page
 curl "http://localhost:8000/users?pageSize=5&pageToken=xyz"
 ```
 
-### 4. 201 Created 响应
-POST 请求返回 201 状态码和 Location 头：
+### 4. 201 Created Response
+
+POST requests return 201 status code with Location header:
 
 ```bash
 curl -X POST http://localhost:8000/users \
   -H "Content-Type: application/json" \
   -d '{"name":"Alice","email":"alice@example.com",...}'
 
-# 返回:
+# Response:
 # HTTP/1.1 201 Created
 # Location: /users/8108fb10-6774-4622-b76d-ef31703925c4
 # {...response body...}
 ```
 
-### 5. HATEOAS 链接 (RFC 8288)
-响应中包含 `_links` 字段，支持客户端导航：
+### 5. HATEOAS Links (RFC 8288)
 
-**用户响应**:
+Response includes `_links` field for client navigation:
+
+**User Response**:
 ```json
 {
   "id": "8108fb10-6774-4622-b76d-ef31703925c4",
@@ -124,7 +129,7 @@ curl -X POST http://localhost:8000/users \
 }
 ```
 
-**档案响应**:
+**Profile Response**:
 ```json
 {
   "id": "profile-uuid",
@@ -137,154 +142,156 @@ curl -X POST http://localhost:8000/users \
 }
 ```
 
-### 6. MySQL 数据库持久化
-使用 SQLAlchemy ORM 实现数据库持久化：
+### 6. MySQL Database Persistence
 
-- **主版本**: `main_db.py` (生产版本)
-- **数据库**: MySQL 8.0
-- **ORM 模型**: `models/orm.py` (UserDB, ProfileDB)
-- **服务层**: `services/database.py` (CRUD 操作)
-- **约束**:
-  - 邮箱唯一
-  - 电话号码唯一
-  - 用户名唯一
-  - 用户-档案 1:1 约束
+Using SQLAlchemy ORM for database integration:
 
-**支持数据库**:
-- ✅ MySQL 8.0 (生产)
-- ✅ SQLite (开发备选)
+- **Production Version**: `main_db.py`
+- **Database**: MySQL 8.0
+- **ORM Models**: `models/orm.py` (UserDB, ProfileDB)
+- **Service Layer**: `services/database.py` (CRUD operations)
+- **Constraints**:
+  - Email uniqueness
+  - Phone uniqueness
+  - Username uniqueness
+  - User-Profile 1:1 relationship
 
-### 7. 部署配置
-完整的容器化和系统集成配置：
+**Supported Databases**:
+- ✅ MySQL 8.0 (production)
+- ✅ SQLite (development alternative)
 
-- **Docker**: 单阶段 Dockerfile，基于 Python 3.11-slim
-- **Docker Compose**: MySQL + API 编排
-- **Systemd**: 系统服务配置
-- **自动部署**: `deployment/deploy.sh`
+### 7. Deployment Configuration
+
+Complete containerization and system integration setup:
+
+- **Docker**: Single-stage Dockerfile based on Python 3.11-slim
+- **Docker Compose**: MySQL + API orchestration
+- **Systemd**: System service configuration
+- **Automated Deployment**: `deployment/deploy.sh`
 
 ---
 
-## 🚀 快速开始
+## 🚀 Getting Started
 
-### 方法 1️⃣: 开发版 (无数据库，最快)
+### Option 1: Development Mode (No Database, Fastest)
 
 ```bash
-# 克隆项目
+# Clone the repository
 git clone <repo-url>
 cd Microservices1-main
 
-# 创建虚拟环境
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 运行开发版 (内存存储)
+# Run development version (in-memory storage)
 python main.py
 
-# API 访问
-# 浏览器: http://localhost:8000/docs
+# Access API
+# Browser: http://localhost:8000/docs
 # API: http://localhost:8000
 ```
 
-### 方法 2️⃣: Docker Compose (推荐，含数据库)
+### Option 2: Docker Compose (Recommended, With Database)
 
 ```bash
-# 启动 MySQL + API
+# Start MySQL + API
 docker-compose up -d
 
-# 验证
+# Verify
 docker-compose ps
 
-# API 访问
-# 浏览器: http://localhost:8000/docs
+# Access API
+# Browser: http://localhost:8000/docs
 # API: http://localhost:8000
 
-# 查看日志
+# View logs
 docker-compose logs -f api
 
-# 停止
+# Stop
 docker-compose down
 ```
 
-### 方法 3️⃣: 交互式启动
+### Option 3: Interactive Setup
 
 ```bash
-# 运行启动脚本
+# Run setup wizard
 bash quickstart.sh
 
-# 选择部署模式:
-# 1) 开发版 (无数据库)
-# 2) Docker Compose (推荐)
-# 3) 本地 MySQL (手动配置)
+# Choose deployment mode:
+# 1) Development (no database)
+# 2) Docker Compose (recommended)
+# 3) Local MySQL (manual configuration)
 ```
 
 ---
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 Microservices1-main/
-├── main.py                          # 开发版 (内存存储)
-├── main_db.py                       # 生产版 (MySQL)
-├── requirements.txt                 # Python 依赖
+├── main.py                          # Dev version (in-memory)
+├── main_db.py                       # Production version (MySQL)
+├── requirements.txt                 # Python dependencies
 │
 ├── models/
-│   ├── user.py                      # Pydantic 用户模型
-│   ├── profile.py                   # Pydantic 档案模型
-│   └── orm.py                       # SQLAlchemy ORM 模型
+│   ├── user.py                      # Pydantic user model
+│   ├── profile.py                   # Pydantic profile model
+│   └── orm.py                       # SQLAlchemy ORM models
 │
 ├── services/
-│   └── database.py                  # 数据库 CRUD 服务
+│   └── database.py                  # Database CRUD service
 │
 ├── utils/
-│   ├── etag.py                      # ETag 生成和验证
-│   └── pagination.py                # 游标分页实现
+│   ├── etag.py                      # ETag generation and validation
+│   └── pagination.py                # Cursor-based pagination
 │
 ├── deployment/
-│   ├── deploy.sh                    # 云服务器部署脚本
-│   └── ms1-api.service              # Systemd 服务文件
+│   ├── deploy.sh                    # Cloud deployment script
+│   └── ms1-api.service              # Systemd service file
 │
-├── Docker 配置/
-│   ├── Dockerfile                   # 容器镜像配置
-│   ├── docker-compose.yml           # MySQL + API 编排
-│   └── .dockerignore                # 优化镜像大小
+├── Docker Files/
+│   ├── Dockerfile                   # Container image config
+│   ├── docker-compose.yml           # MySQL + API orchestration
+│   └── .dockerignore                # Image size optimization
 │
-├── 脚本/
-│   ├── test_api.sh                  # 功能验证脚本 (8/8 ✅)
-│   └── quickstart.sh                # 交互式启动脚本
+├── Scripts/
+│   ├── test_api.sh                  # Verification script (8/8 ✅)
+│   └── quickstart.sh                # Interactive setup
 │
-└── 文档/
-    ├── README.md                    # 原始项目说明
-    └── ITER2.md                     # 本文件 (综合文档)
+└── Documentation/
+    ├── README.md                    # Quick reference
+    └── ITER2.md                     # This file
 ```
 
 ---
 
-## 🧪 测试验证
+## 🧪 Testing & Verification
 
-### 自动化测试结果
+### Test Results
 
-**Postman 测试**: 38/38 通过 (100%) ✅
+**Postman Test Suite**: 38/38 Pass (100%) ✅
 ```
-✅ 创建用户: 2/2
-✅ ETag 测试: 6/6
-✅ 查询参数: 4/4
-✅ HATEOAS 链接: 2/2
-✅ 创建档案: 2/2
-✅ 错误处理: 3/3
-✅ 分页测试: 4/4
-✅ 其他: 13/13
+✅ Create Users: 2/2
+✅ ETag Tests: 6/6
+✅ Query Parameters: 4/4
+✅ HATEOAS Links: 2/2
+✅ Create Profiles: 2/2
+✅ Error Handling: 3/3
+✅ Pagination: 4/4
+✅ Other: 13/13
 ────────────────────
-   总计: 38/38 通过
+   Total: 38/38 Pass
 ```
 
-**Bash 脚本测试**: 8/8 通过 (100%) ✅
+**Bash Script Tests**: 8/8 Pass (100%) ✅
 ```bash
 bash test_api.sh
 
-# 输出:
+# Output:
 # ✅ [Test 1] POST /users - 201 Created
 # ✅ [Test 2] GET with If-None-Match - 304 Not Modified
 # ✅ [Test 3] PATCH with Wrong If-Match - 412 Precondition Failed
@@ -294,29 +301,30 @@ bash test_api.sh
 # ✅ [Test 7] 1:1 Constraint - 400 Bad Request
 # ✅ [Test 8] 404 Not Found
 #
-# 结果: 8/8 通过
+# Result: 8/8 Pass
 ```
 
-### 运行测试
+### Running Tests
 
 ```bash
-# 启动 API (如果还没启动)
+# Start API (if not already running)
 docker-compose up -d
 
-# 运行 Bash 测试
+# Run bash tests
 bash test_api.sh
 
-# 运行 Postman 测试
-# 1. 在 Postman 导入 Postman_Tests_v2.json
-# 2. 点击运行集合
-# 3. 查看 38/38 通过结果
+# Run Postman tests
+# 1. Open Postman
+# 2. Import Postman_Tests_v2.json
+# 3. Click Run Collection
+# 4. Verify 38/38 pass
 ```
 
 ---
 
-## 📝 使用示例
+## 📝 API Examples
 
-### 创建用户
+### Create User
 
 ```bash
 curl -X POST http://localhost:8000/users \
@@ -329,7 +337,7 @@ curl -X POST http://localhost:8000/users \
     "password": "SecurePass123"
   }'
 
-# 响应 (201 Created):
+# Response (201 Created):
 {
   "id": "8108fb10-6774-4622-b76d-ef31703925c4",
   "name": "Alice Johnson",
@@ -344,23 +352,23 @@ curl -X POST http://localhost:8000/users \
 }
 ```
 
-### 获取用户 (带 ETag)
+### Get User with ETag
 
 ```bash
 curl -i http://localhost:8000/users/8108fb10-6774-4622-b76d-ef31703925c4
 
-# 响应头包含:
+# Response headers include:
 # ETag: "5f0c...b8a2"
 # Cache-Control: max-age=3600
 ```
 
-### 查询用户
+### Query Users
 
 ```bash
-# 按会员等级过滤
+# Filter by membership tier
 curl "http://localhost:8000/users?membership_tier=PRO&pageSize=10"
 
-# 响应:
+# Response:
 {
   "items": [
     { "id": "...", "name": "Alice", ... },
@@ -375,7 +383,7 @@ curl "http://localhost:8000/users?membership_tier=PRO&pageSize=10"
 }
 ```
 
-### 创建档案
+### Create Profile
 
 ```bash
 curl -X POST http://localhost:8000/profiles \
@@ -388,7 +396,7 @@ curl -X POST http://localhost:8000/profiles \
     "style_tags": ["minimalist", "vintage"]
   }'
 
-# 响应 (201 Created):
+# Response (201 Created):
 {
   "id": "profile-uuid-here",
   "username": "alice_fashion",
@@ -400,317 +408,347 @@ curl -X POST http://localhost:8000/profiles \
 }
 ```
 
-### 条件更新 (ETag)
+### Conditional Update with ETag
 
 ```bash
-# 使用正确的 ETag 更新
+# Update with correct ETag
 curl -X PATCH http://localhost:8000/users/8108fb10-6774-4622-b76d-ef31703925c4 \
   -H "Content-Type: application/json" \
   -H "If-Match: 5f0c...b8a2" \
   -d '{"membership_tier": "PROMAX"}'
 
-# 响应 (200 OK) + 新 ETag
+# Response (200 OK) with new ETag
 
-# 使用错误的 ETag 尝试更新
+# Try update with wrong ETag
 curl -X PATCH http://localhost:8000/users/8108fb10-6774-4622-b76d-ef31703925c4 \
   -H "Content-Type: application/json" \
   -H "If-Match: wrong-etag" \
   -d '{"membership_tier": "PROMAX"}'
 
-# 响应 (412 Precondition Failed)
+# Response (412 Precondition Failed)
 ```
 
 ---
 
-## 🛠 部署
+## 🛠 Deployment Guide
 
-### Docker Compose (本地或云)
+### Local Deployment with Docker Compose
 
 ```bash
-# 构建并启动
+# Build and start containers
 docker-compose up -d
 
-# 查看状态
+# Check status
 docker-compose ps
 
-# 查看日志
+# View logs
 docker-compose logs -f api
 
-# 停止
+# Stop containers
 docker-compose down
 
-# 清理数据并重启
+# Clean data and restart
 docker-compose down -v
 docker-compose up -d
 ```
 
-### Systemd (Linux VM)
+### Linux VM with Systemd
 
 ```bash
-# 复制服务文件
+# Copy service file
 sudo cp deployment/ms1-api.service /etc/systemd/system/
 
-# 启用和启动
+# Enable and start service
 sudo systemctl enable ms1-api
 sudo systemctl start ms1-api
 
-# 检查状态
+# Check status
 sudo systemctl status ms1-api
 
-# 查看日志
+# View logs
 sudo journalctl -u ms1-api -f
 
-# 重启
+# Restart service
 sudo systemctl restart ms1-api
 ```
 
-### 自动部署到云
+### Automated Cloud Deployment
+
+First, prepare your cloud VM:
+
+1. **Create VM** with Ubuntu 22.04 or similar
+2. **Configure SSH** access with key authentication
+3. **Note the VM IP address**
+
+Then update the deployment script:
 
 ```bash
-# 配置 Git 仓库 URL (在 deployment/deploy.sh 中)
+# Edit deployment/deploy.sh
+# Change this line to your actual repo:
 REPO_URL="https://github.com/your-org/microservices1-iter2.git"
+```
 
-# 运行部署脚本
-bash deployment/deploy.sh ms1 <VM_IP> ~/.ssh/your-key
+Finally, run the deployment:
 
-# 脚本会自动:
-# 1. 准备 VM 环境
-# 2. 克隆代码
-# 3. 安装依赖
-# 4. 初始化数据库
-# 5. 启动 Systemd 服务
+```bash
+bash deployment/deploy.sh ms1 <VM_IP> ~/.ssh/your-private-key
+
+# The script will automatically:
+# 1. Prepare VM environment
+# 2. Clone your repository
+# 3. Set up Python environment
+# 4. Initialize database
+# 5. Start Systemd service
+```
+
+**After Deployment**:
+
+```bash
+# Access the API
+curl http://<VM_IP>:8000/docs
+
+# Check service status
+ssh -i ~/.ssh/your-key ms1@<VM_IP> sudo systemctl status ms1-api
+
+# View logs
+ssh -i ~/.ssh/your-key ms1@<VM_IP> sudo journalctl -u ms1-api -f
+
+# Restart service if needed
+ssh -i ~/.ssh/your-key ms1@<VM_IP> sudo systemctl restart ms1-api
 ```
 
 ---
 
-## 📊 API 端点汇总
+## 📊 API Endpoints Summary
 
-### 用户端点
+### User Endpoints
 
-| 方法 | 端点 | 说明 | 返回码 |
-|-----|------|------|--------|
-| POST | `/users` | 创建用户 | 201 |
-| GET | `/users` | 列出用户 (支持过滤、分页) | 200 |
-| GET | `/users/{id}` | 获取单个用户 | 200, 304 |
-| PATCH | `/users/{id}` | 更新用户 | 200, 412 |
-| DELETE | `/users/{id}` | 删除用户 | 204 |
+| Method | Endpoint | Description | Status Codes |
+|--------|----------|-------------|--------------|
+| POST | `/users` | Create user | 201 |
+| GET | `/users` | List users (supports filtering, pagination) | 200 |
+| GET | `/users/{id}` | Get single user | 200, 304 |
+| PATCH | `/users/{id}` | Update user | 200, 412 |
+| DELETE | `/users/{id}` | Delete user | 204 |
 
-### 档案端点
+### Profile Endpoints
 
-| 方法 | 端点 | 说明 | 返回码 |
-|-----|------|------|--------|
-| POST | `/profiles` | 创建档案 | 201 |
-| GET | `/profiles` | 列出档案 (支持过滤、分页) | 200 |
-| GET | `/profiles/{id}` | 获取单个档案 | 200, 304 |
-| PATCH | `/profiles/{id}` | 更新档案 | 200, 412 |
-| DELETE | `/profiles/{id}` | 删除档案 | 204 |
+| Method | Endpoint | Description | Status Codes |
+|--------|----------|-------------|--------------|
+| POST | `/profiles` | Create profile | 201 |
+| GET | `/profiles` | List profiles (supports filtering, pagination) | 200 |
+| GET | `/profiles/{id}` | Get single profile | 200, 304 |
+| PATCH | `/profiles/{id}` | Update profile | 200, 412 |
+| DELETE | `/profiles/{id}` | Delete profile | 204 |
 
-### 查询参数
+### Query Parameters
 
-**支持的查询参数**:
-- `email`: 按邮箱过滤
-- `membership_tier`: 按会员等级过滤
-- `username`: 按用户名过滤
-- `profile_id`: 按档案 ID 过滤
-- `created_after`: 创建日期开始
-- `created_before`: 创建日期结束
-- `pageSize`: 每页记录数 (默认 10, 最大 100)
-- `pageToken`: 分页游标
+Supported query parameters:
+- `email`: Filter by email
+- `membership_tier`: Filter by membership tier
+- `username`: Filter by username
+- `profile_id`: Filter by profile ID
+- `created_after`: Start date for range
+- `created_before`: End date for range
+- `pageSize`: Records per page (default: 10, max: 100)
+- `pageToken`: Pagination cursor
 
-### 响应头
+### Response Headers
 
-| 头 | 说明 | 示例 |
-|----|------|------|
-| `ETag` | 资源版本标签 | `"5f0c8b2d..."` |
-| `Location` | 新创建资源的 URL | `/users/8108fb10-...` |
-| `Cache-Control` | 缓存控制 | `max-age=3600` |
-
----
-
-## 🔑 关键特性
-
-### ✅ 生产就绪
-
-- ✅ 正确的 HTTP 状态码 (201, 204, 304, 400, 404, 412, etc)
-- ✅ 完整的 ETag 缓存支持 (RFC 7232)
-- ✅ HATEOAS 链接 (RFC 8288)
-- ✅ 游标分页 (高效处理大数据集)
-- ✅ 查询过滤
-- ✅ 数据验证 (Pydantic)
-- ✅ 数据库持久化 (SQLAlchemy)
-- ✅ 容器化 (Docker)
-- ✅ 系统集成 (Systemd)
-- ✅ 自动化部署脚本
-
-### 🧪 测试完整
-
-- ✅ Postman 集合: 38/38 通过
-- ✅ Bash 脚本: 8/8 通过
-- ✅ 单元测试: 涵盖所有 Iter2 需求
-- ✅ 集成测试: 验证数据库和 API
+| Header | Description | Example |
+|--------|-------------|---------|
+| `ETag` | Resource version tag | `"5f0c8b2d..."` |
+| `Location` | URL of newly created resource | `/users/8108fb10-...` |
+| `Cache-Control` | Cache directives | `max-age=3600` |
 
 ---
 
-## 📖 文件说明
+## 🔑 Key Features
 
-| 文件 | 说明 |
-|-----|------|
-| `main.py` | 开发版 API (内存存储) - 最快启动 |
-| `main_db.py` | 生产版 API (MySQL) - 数据持久化 |
-| `models/user.py` | Pydantic 用户数据模型 |
-| `models/profile.py` | Pydantic 档案数据模型 |
-| `models/orm.py` | SQLAlchemy ORM 模型 |
-| `services/database.py` | 数据库 CRUD 服务 |
-| `utils/etag.py` | ETag 实现 |
-| `utils/pagination.py` | 分页实现 |
-| `Dockerfile` | Docker 镜像构建 |
-| `docker-compose.yml` | MySQL + API 编排 |
-| `deployment/deploy.sh` | 云部署脚本 |
-| `deployment/ms1-api.service` | Systemd 服务 |
-| `test_api.sh` | 功能验证脚本 |
-| `quickstart.sh` | 交互式启动脚本 |
+### Production Ready
 
----
+- ✅ Correct HTTP status codes (201, 204, 304, 400, 404, 412, etc)
+- ✅ Full ETag caching support (RFC 7232)
+- ✅ HATEOAS links (RFC 8288)
+- ✅ Cursor-based pagination for large datasets
+- ✅ Query filtering
+- ✅ Data validation (Pydantic)
+- ✅ Database persistence (SQLAlchemy)
+- ✅ Containerization (Docker)
+- ✅ System integration (Systemd)
+- ✅ Automated deployment scripts
 
-## 🎯 核心实现细节
+### Comprehensive Testing
 
-### ETag 工作流程
-
-1. **生成**: 对每个用户/档案资源计算 MD5 哈希
-2. **返回**: 在响应头中返回 ETag 值
-3. **验证**: 
-   - 客户端使用 `If-None-Match` 头发送旧 ETag
-   - 服务器对比，匹配则返回 304 (不发送响应体)
-   - 不匹配则返回 200 (发送完整资源)
-4. **条件更新**: 
-   - 客户端使用 `If-Match` 头发送最新 ETag
-   - 服务器对比，不匹配则返回 412
-   - 匹配则执行更新并返回新 ETag
-
-### 分页实现
-
-1. **不透明游标**: pageToken 是 base64 编码的偏移值
-2. **高效**: 不需要计算总数，只需生成下一页链接
-3. **灵活**: 支持任意 pageSize (1-100)
-4. **导航**: 响应的 `_links.next` 包含下一页 URL
-
-### 1:1 约束
-
-- 每个用户最多创建一个档案
-- 创建第二个档案时返回 400 Bad Request
-- 错误信息: "User already has a profile"
+- ✅ Postman suite: 38/38 pass
+- ✅ Bash scripts: 8/8 pass
+- ✅ Unit tests: All Iter2 requirements covered
+- ✅ Integration tests: Database and API verified
 
 ---
 
-## ✨ 关于测试集合
+## 📖 File Reference
+
+| File | Purpose |
+|------|---------|
+| `main.py` | Development API (in-memory) - fastest startup |
+| `main_db.py` | Production API (MySQL) - data persistence |
+| `models/user.py` | Pydantic user data model |
+| `models/profile.py` | Pydantic profile data model |
+| `models/orm.py` | SQLAlchemy ORM models |
+| `services/database.py` | Database CRUD service |
+| `utils/etag.py` | ETag implementation |
+| `utils/pagination.py` | Pagination implementation |
+| `Dockerfile` | Docker image build config |
+| `docker-compose.yml` | MySQL + API orchestration |
+| `deployment/deploy.sh` | Cloud deployment script |
+| `deployment/ms1-api.service` | Systemd service file |
+| `test_api.sh` | API verification script |
+| `quickstart.sh` | Interactive setup wizard |
+
+---
+
+## 🎯 Implementation Details
+
+### ETag Workflow
+
+1. **Generation**: Compute MD5 hash for each user/profile resource
+2. **Response**: Return ETag value in response header
+3. **Validation**: 
+   - Client sends old ETag via `If-None-Match` header
+   - Server compares, returns 304 if match (no body)
+   - Returns 200 with full resource if no match
+4. **Conditional Update**: 
+   - Client sends latest ETag via `If-Match` header
+   - Server compares, returns 412 if no match
+   - Executes update and returns new ETag if match
+
+### Pagination Implementation
+
+1. **Opaque Cursor**: pageToken is base64-encoded offset
+2. **Efficient**: No need to calculate total, just generate next link
+3. **Flexible**: Supports any pageSize (1-100)
+4. **Navigation**: Response `_links.next` contains next page URL
+
+### 1:1 Relationship
+
+- Each user can create maximum one profile
+- Creating second profile returns 400 Bad Request
+- Error message: "User already has a profile"
+
+---
+
+## ✨ About Test Suite
 
 ### Postman_Tests_v2.json
 
-这是修复后的完整测试集合，包含 **38 个测试**:
+Complete fixed test collection with **38 tests**:
 
-- ✅ 所有测试使用正确的 `event` 格式
-- ✅ 变量自动从响应中提取
-- ✅ 支持集合运行 (Run Collection)
-- ✅ 所有 38 个测试通过
+- ✅ All tests use correct `event` format
+- ✅ Variables auto-extracted from responses
+- ✅ Supports collection run mode
+- ✅ All 38 tests pass
 
-**导入方法**:
-1. 打开 Postman
+**Import Instructions**:
+1. Open Postman
 2. Collections → Import
-3. 选择 `Postman_Tests_v2.json`
-4. 设置环境变量 `base_url = http://localhost:8000`
-5. 点击 Run Collection
+3. Select `Postman_Tests_v2.json`
+4. Set environment variable `base_url = http://localhost:8000`
+5. Click Run Collection
 
 ---
 
-## 🚀 建议工作流程
+## 🚀 Recommended Workflow
 
-### 开发阶段
+### During Development
 
 ```bash
-# 第一次
+# First time
 bash quickstart.sh
-# 选择模式 2 (Docker Compose)
+# Select mode 2 (Docker Compose)
 
-# 每次修改后
+# After each change
 bash test_api.sh
-# 验证 8/8 通过
+# Verify 8/8 pass
 ```
 
-### 提交前
+### Before Submission
 
 ```bash
-# 清理数据
+# Clean data
 docker-compose down -v
 docker-compose up -d
 
-# 完整测试
+# Run full test suite
 bash test_api.sh
 
-# 或使用 Postman
-# 导入 Postman_Tests_v2.json
-# 运行集合验证 38/38 通过
+# Or use Postman
+# Import Postman_Tests_v2.json
+# Run collection to verify 38/38 pass
 ```
 
-### 部署到生产
+### Production Deployment
 
 ```bash
-# 配置 Git 仓库和 SSH 密钥后
+# After configuring Git repo and SSH key
 bash deployment/deploy.sh ms1 <VM_IP> ~/.ssh/key
 ```
 
 ---
 
-## 📞 常见问题
+## ❓ FAQ
 
-### Q: 如何重置数据?
+### How do I reset the data?
 ```bash
 docker-compose down -v
 docker-compose up -d
 ```
 
-### Q: 如何查看 API 文档?
-访问 http://localhost:8000/docs (Swagger UI)
+### How do I view the API documentation?
+Visit http://localhost:8000/docs (Swagger UI)
 
-### Q: 开发版和生产版有什么区别?
-- **开发版** (`main.py`): 数据存储在内存，重启丢失，启动最快
-- **生产版** (`main_db.py`): 数据存储在 MySQL，持久化，支持多实例
+### What's the difference between dev and production versions?
+- **Development** (`main.py`): In-memory storage, data lost on restart, fastest startup
+- **Production** (`main_db.py`): MySQL storage, persistent data, supports multiple instances
 
-### Q: 如何修改端口?
-编辑 `docker-compose.yml` 中的 `ports` 配置
+### How do I change the port?
+Edit `docker-compose.yml` and modify the `ports` configuration
 
-### Q: 如何使用本地 MySQL?
-运行 `bash quickstart.sh` 并选择模式 3
+### Can I use local MySQL instead of Docker?
+Run `bash quickstart.sh` and select option 3
 
 ---
 
-## ✅ 完成清单
+## ✅ Completion Checklist
 
-- [x] ETag 支持 (RFC 7232)
-- [x] 查询参数 (6 种类型)
-- [x] 分页 (游标型)
-- [x] 201 Created + Location 头
-- [x] HATEOAS 链接 (RFC 8288)
-- [x] MySQL 数据库
+- [x] ETag support (RFC 7232)
+- [x] Query parameters (6 types)
+- [x] Pagination (cursor-based)
+- [x] 201 Created + Location header
+- [x] HATEOAS links (RFC 8288)
+- [x] MySQL database
 - [x] Docker + Docker Compose
-- [x] Systemd 服务
-- [x] 自动化部署脚本
-- [x] Postman 测试集合 (38/38 通过)
-- [x] Bash 验证脚本 (8/8 通过)
-- [x] 完整文档
+- [x] Systemd service
+- [x] Automated deployment script
+- [x] Postman test suite (38/38 pass)
+- [x] Bash verification script (8/8 pass)
+- [x] Complete documentation
 
-**项目状态**: ✅ **100% 完成** 🎉
+**Project Status**: ✅ **100% Complete** 🎉
 
 ---
 
-## 📚 参考
+## 📚 References
 
-- FastAPI 官方文档: https://fastapi.tiangolo.com
+- FastAPI Documentation: https://fastapi.tiangolo.com
 - RFC 7232 (HTTP Conditional Requests): https://tools.ietf.org/html/rfc7232
 - RFC 8288 (Web Linking): https://tools.ietf.org/html/rfc8288
-- SQLAlchemy 官方文档: https://docs.sqlalchemy.org
+- SQLAlchemy Documentation: https://docs.sqlalchemy.org
 
 ---
 
-**最后更新**: 2025-11-22  
-**作者**: AI Assistant (GitHub Copilot)  
-**许可证**: MIT
+**Last Updated**: 2025-11-22  
+**Repository**: Microservices1iter2  
+**License**: MIT
+
+---
