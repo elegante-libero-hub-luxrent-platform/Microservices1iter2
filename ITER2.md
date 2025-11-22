@@ -710,7 +710,3 @@ docker-compose up -d
 - SQLAlchemy 官方文档: https://docs.sqlalchemy.org
 
 ---
-
-**最后更新**: 2025-11-22  
-**作者**: AI Assistant (GitHub Copilot)  
-**许可证**: MIT
