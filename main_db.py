@@ -18,6 +18,7 @@ Environment variables:
 from __future__ import annotations
 
 import os
+import logging
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -32,6 +33,13 @@ from database import get_db, init_db, SessionLocal
 from services.database import UserService, ProfileService
 from utils.etag import generate_etag, etag_from_model, should_return_304, should_process_request
 from utils.pagination import paginate, PaginationParams
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 port = int(os.environ.get("FASTAPIPORT", 8000))
 
@@ -407,9 +415,22 @@ def health_check(db: Session = Depends(get_db)):
 @app.on_event("startup")
 def startup_event():
     """Initialize database on startup."""
-    print("Initializing database schema...")
-    init_db()
-    print("Database initialized successfully")
+    db_host = os.environ.get("DB_HOST", "localhost")
+    db_name = os.environ.get("DB_NAME", "ms1_db")
+    db_user = os.environ.get("DB_USER", "ms1_user")
+    
+    logger.info("=" * 60)
+    logger.info("Starting User & Profile Service (Database-backed)")
+    logger.info(f"Database: {db_host}:{db_name} (user: {db_user})")
+    logger.info(f"API Port: {port}")
+    logger.info("=" * 60)
+    
+    try:
+        init_db()
+        logger.info("✓ Database schema initialized successfully")
+    except Exception as e:
+        logger.error(f"✗ Failed to initialize database: {e}")
+        raise
 
 
 # ============================================================================
