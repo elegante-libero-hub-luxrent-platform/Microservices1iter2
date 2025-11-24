@@ -4,6 +4,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+
+
+# Local test & utility scripts
+reset_db.py
+t.py
+
+
 # C extensions
 *.so
 
