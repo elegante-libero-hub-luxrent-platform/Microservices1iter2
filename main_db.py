@@ -22,6 +22,10 @@ import logging
 from typing import Dict, List, Optional
 from uuid import UUID
 
+# [新增] 引入 dotenv，让本地直接运行 python main_db.py 也能读到配置
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Depends, Query, Path, Header
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -29,7 +33,8 @@ from sqlalchemy.orm import Session
 from models.user import UserCreate, UserUpdate, UserRead
 from models.profile import ProfileCreate, ProfileRead, ProfileUpdate
 from models.orm import UserDB, ProfileDB
-from database import get_db, init_db, SessionLocal
+# [修改] 引入额外的变量用于日志显示
+from database import get_db, init_db, SessionLocal, INSTANCE_CONNECTION_NAME, DB_HOST, DB_NAME
 from services.database import UserService, ProfileService
 from utils.etag import generate_etag, etag_from_model, should_return_304, should_process_request
 from utils.pagination import paginate, PaginationParams
@@ -41,7 +46,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-port = int(os.environ.get("PORT", 8080))
+# [修改] Cloud Run 强制要求监听 PORT 环境变量 (8080)，本地没有 PORT 则回退到 8000
+port = int(os.environ.get("PORT", 8000))
 
 app = FastAPI(
     title="Person/Address API (Database-backed)",
@@ -415,14 +421,19 @@ def health_check(db: Session = Depends(get_db)):
 @app.on_event("startup")
 def startup_event():
     """Initialize database on startup."""
-    db_host = os.environ.get("DB_HOST", "localhost")
-    db_name = os.environ.get("DB_NAME", "ms1_db")
-    db_user = os.environ.get("DB_USER", "ms1_user")
-    
     logger.info("=" * 60)
-    logger.info("Starting User & Profile Service (Database-backed)")
-    logger.info(f"Database: {db_host}:{db_name} (user: {db_user})")
-    logger.info(f"API Port: {port}")
+    logger.info("🚀 Starting User & Profile Service")
+    
+    # [关键修改] 智能打印日志，显示真实的连接方式 (Socket 还是 IP)
+    if INSTANCE_CONNECTION_NAME:
+        logger.info(f"🔗 Mode: Cloud Run (Unix Socket)")
+        logger.info(f"🔌 Connection Name: {INSTANCE_CONNECTION_NAME}")
+    else:
+        logger.info(f"🔗 Mode: Local / TCP")
+        logger.info(f"🔌 Host: {DB_HOST}")
+    
+    logger.info(f"📦 Database: {DB_NAME}")
+    logger.info(f"🚪 API Port: {port}")
     logger.info("=" * 60)
     
     try:
@@ -430,6 +441,8 @@ def startup_event():
         logger.info("✓ Database schema initialized successfully")
     except Exception as e:
         logger.error(f"✗ Failed to initialize database: {e}")
+        # 在 Cloud Run 环境下，如果连不上数据库，通常建议直接崩溃，
+        # 这样 Cloud Run 会知道启动失败，而不是带着错误的连接继续运行。
         raise
 
 
