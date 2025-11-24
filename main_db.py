@@ -28,6 +28,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Depends, Query, Path, Header
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from models.user import UserCreate, UserUpdate, UserRead
@@ -55,6 +56,13 @@ app = FastAPI(
     version="0.2.0-db",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"], 
+)
 
 # Helper functions for HATEOAS links
 def _build_user_with_links(user: UserRead) -> UserRead:
