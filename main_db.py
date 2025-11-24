@@ -41,7 +41,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-port = int(os.environ.get("PORT", 8000))
+port = int(os.environ.get("PORT", 8080))
 
 app = FastAPI(
     title="Person/Address API (Database-backed)",
