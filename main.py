@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import FastAPI, HTTPException, Response
 from fastapi import Query, Path, Header
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from models.user import UserCreate, UserUpdate, UserRead
 from models.profile import ProfileCreate, ProfileRead, ProfileUpdate
@@ -31,6 +32,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"], 
+)
 
 # -----------------------------------------------------------------------------
 # Helper functions
