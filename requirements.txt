@@ -20,4 +20,3 @@ cryptography==43.0.0
 
 # Google Cloud dependencies (for Secret Manager and Cloud SQL)
 google-cloud-secret-manager==2.20.0
-google-cloud-sql-connector==1.12.2
